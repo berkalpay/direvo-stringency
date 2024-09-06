@@ -14,7 +14,6 @@ theme_update(panel.grid.major=element_blank(), panel.grid.minor=element_blank(),
 with_common_elements <- function(plot) {
   plot +
     geom_line(aes(color=n)) +
-    facet_grid(~alpha) +
     labs(color=expression(paste("Population size, ", italic(n)))) +
     scale_x_continuous(breaks=seq(0, 1, 1/3), labels=c("0", "1/3", "2/3", "1"),
                        expand=c(0.01,0.01)) +
@@ -30,6 +29,7 @@ plot_df <- read_csv("../results/sampling_two_dfes.csv") %>%
   mutate(improvement=mean_maxes-mean_maxes[which(nlow_frac==0)],
          n=as.factor(n))
 p <- ggplot(plot_df, aes(x=nlow_frac, y=improvement)) +
+  facet_grid(~alpha) +
   geom_hline(yintercept=0, linetype="dashed") +
   xlab(expression(paste("Fraction of ", italic(n), " assigned to less-fit genotype, ",
                         italic(n)[low]/italic(n)))) +
@@ -44,21 +44,27 @@ plot_df <- read_csv("../results/sampling_multiple_dfes.csv") %>%
          k_frac=k/n,
          n=as.factor(n))
 p <- ggplot(plot_df, aes(x=k_frac, y=improvement)) +
+  facet_grid(~alpha) +
   geom_hline(yintercept=0, linetype="dashed") +
   xlab(expression(paste("Fraction of variants selected, ", italic(k)/italic(n)))) +
   ylab("Increase in average log max\nfitness over max stringency")
 ggsave("../figures/sampling_multiple_dfes.pdf", with_common_elements(p), width=6, height=3)
 
 # Sampling multiple distributions (alternative)
-plot_df <- read_csv("../results/sampling_multiple_dfes_alt.csv") %>%
+alt1_df <- mutate(read_csv("../results/sampling_multiple_dfes_alt1.csv"),
+                  model="Differing\nmeans model")
+alt2_df <- mutate(read_csv("../results/sampling_multiple_dfes_alt2.csv"),
+                  model="Differing\nvariances model")
+plot_df <- rbind(alt1_df, alt2_df) %>%
   rename(mean_maxes=mean) %>%
-  group_by(alpha, n) %>%
+  group_by(model, alpha, n) %>%
   mutate(improvement=mean_maxes/mean_maxes[which(k==1)],
          k_frac=k/n,
          n=as.factor(n))
 p <- ggplot(plot_df, aes(x=k_frac, y=improvement)) +
+  facet_grid(model~alpha) +
   geom_hline(yintercept=1, linetype="dashed") +
-  scale_y_continuous(breaks=c(1, 3/2, 2), labels=c("1", "1.5", "2")) +
+  scale_y_continuous(breaks=c(0, 1/2, 1, 3/2, 2), labels=c("0", "1/2", "1", "3/2", "2")) +
   xlab(expression(paste("Fraction of variants selected, ", italic(k)/italic(n)))) +
   ylab("Fold improvement of max\nfitness over max stringency")
-ggsave("../figures/sampling_multiple_dfes_alt.pdf", with_common_elements(p), width=6, height=3)
+ggsave("../figures/sampling_multiple_dfes_alt.pdf", with_common_elements(p), width=6, height=4.4)
